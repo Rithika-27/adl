@@ -14,11 +14,35 @@ async function fetch(url) {
   try {
     const response = await axios.request(options);
     console.log(response.data);
-    return response.data; // Return the data for reuse
+    return response.data; 
   } catch (error) {
     console.error("Error fetching data:", error.message);
-    throw new Error(error.message); // Throw the error for higher-level handling
+    throw new Error(error.message); 
   }
 }
 
+
+async function fetchfrommovie(url) {
+  const options = {
+    method: 'GET',
+    url: url, 
+    headers: {
+      'x-api-key': ENV_VARS.MOVIEGLU_API_KEY,
+      'authoization':'Basic RkZBVTo5RFJyVFQ0NG5rQ3I=',
+      
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+    console.log(response.data);
+    return response.data; 
+  } catch (error) {
+    console.error("Error fetching data:", error.message);
+    throw new Error(error.message); 
+  }
+}
+
+
+export { fetch, fetchfrommovie };
 export default fetch;

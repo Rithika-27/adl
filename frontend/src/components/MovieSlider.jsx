@@ -1,86 +1,75 @@
-import { useEffect, useRef, useState } from "react";
-import { useContentStore } from "../store/content";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
-import { SMALL_IMG_BASE_URL } from "../utils/constants";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const MovieSlider = ({ category }) => {
-	const { contentType } = useContentStore();
-	const [content, setContent] = useState([]);
-	const [showArrows, setShowArrows] = useState(false);
+const MovieSlider = () => {
+  const [featuredMovie, setFeaturedMovie] = useState(null);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-	const sliderRef = useRef(null);
+  useEffect(() => {
+    const fetchTrendingMovies = async () => {
+      try {
+        // Ensure the endpoint matches your backend mount point
+        const res = await axios.get("/api/v1/movie/trending");
+        if (res.data.success) {
+          setFeaturedMovie(res.data.content);
+          setTrendingMovies(Array.isArray(res.data.movies) ? res.data.movies : []);
+        } else {
+          console.error("Backend error:", res.data.message || "Unknown error");
+        }
+      } catch (error) {
+        console.error("Error fetching trending movies:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-	const formattedCategoryName =
-		category.replaceAll("_", " ")[0].toUpperCase() + category.replaceAll("_", " ").slice(1);
-	const formattedContentType = contentType === "movie" ? "Movies" : "TV Shows";
+    fetchTrendingMovies();
+  }, []);
 
-	useEffect(() => {
-		const getContent = async () => {
-			const res = await axios.get(`/api/v1/${contentType}/${category}`);
-			setContent(res.data.content);
-		};
+  if (loading) {
+    return <p className="text-white p-4">Loading trending movies...</p>;
+  }
 
-		getContent();
-	}, [contentType, category]);
+  return (
+    <div className="movie-slider container mx-auto px-4 py-8">
+      <h2 className="text-3xl font-bold text-white mb-4">Trending Movies</h2>
+      
+      {/* Featured Movie Section */}
+      {featuredMovie && (
+        <div className="featured-movie mb-8 p-4 bg-gray-800 rounded text-white">
+          <h3 className="text-2xl font-semibold">
+            Featured: {featuredMovie.primaryTitle || featuredMovie.originalTitle}
+          </h3>
+          {/* Additional details for the featured movie can go here */}
+        </div>
+      )}
 
-	const scrollLeft = () => {
-		if (sliderRef.current) {
-			sliderRef.current.scrollBy({ left: -sliderRef.current.offsetWidth, behavior: "smooth" });
-		}
-	};
-	const scrollRight = () => {
-		sliderRef.current.scrollBy({ left: sliderRef.current.offsetWidth, behavior: "smooth" });
-	};
-
-	return (
-		<div
-			className='bg-black text-white relative px-5 md:px-20'
-			onMouseEnter={() => setShowArrows(true)}
-			onMouseLeave={() => setShowArrows(false)}
-		>
-			<h2 className='mb-4 text-2xl font-bold'>
-				{formattedCategoryName} {formattedContentType}
-			</h2>
-
-			<div className='flex space-x-4 overflow-x-scroll scrollbar-hide' ref={sliderRef}>
-				{content.map((item) => (
-					<Link to={`/watch/${item.id}`} className='min-w-[250px] relative group' key={item.id}>
-						<div className='rounded-lg overflow-hidden'>
-							<img
-								src={SMALL_IMG_BASE_URL + item.backdrop_path}
-								alt='Movie image'
-								className='transition-transform duration-300 ease-in-out group-hover:scale-125'
-							/>
-						</div>
-						<p className='mt-2 text-center'>{item.title || item.name}</p>
-					</Link>
-				))}
-			</div>
-
-			{showArrows && (
-				<>
-					<button
-						className='absolute top-1/2 -translate-y-1/2 left-5 md:left-24 flex items-center justify-center
-            size-12 rounded-full bg-black bg-opacity-50 hover:bg-opacity-75 text-white z-10
-            '
-						onClick={scrollLeft}
-					>
-						<ChevronLeft size={24} />
-					</button>
-
-					<button
-						className='absolute top-1/2 -translate-y-1/2 right-5 md:right-24 flex items-center justify-center
-            size-12 rounded-full bg-black bg-opacity-50 hover:bg-opacity-75 text-white z-10
-            '
-						onClick={scrollRight}
-					>
-						<ChevronRight size={24} />
-					</button>
-				</>
-			)}
-		</div>
-	);
+      {/* Slider List */}
+      {trendingMovies.length > 0 ? (
+        <div className="flex space-x-4 overflow-x-scroll scrollbar-hide">
+          {trendingMovies.map((movie, index) => (
+            <div key={index} className="min-w-[250px] bg-gray-800 p-4 rounded">
+              <img
+                src={
+                  movie.primaryImage && movie.primaryImage !== "No poster available"
+                    ? movie.primaryImage
+                    : "https://via.placeholder.com/250x350?text=No+Image"
+                }
+                alt={movie.primaryTitle || movie.originalTitle}
+                className="w-full h-auto rounded"
+              />
+              <p className="mt-2 text-white text-center">
+                {movie.primaryTitle || movie.originalTitle}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-400">No trending movies available.</p>
+      )}
+    </div>
+  );
 };
+
 export default MovieSlider;

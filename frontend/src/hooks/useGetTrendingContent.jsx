@@ -18,3 +18,4 @@ const useGetTrendingContent = () => {
 	return { trendingContent };
 };
 export default useGetTrendingContent;
+
